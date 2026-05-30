@@ -23,6 +23,7 @@ function FactuurModal({ factuur, onClose }) {
     status: 'openstaand',
     notities: '',
     btwTarief: settings.btwtarief || 21,
+    btwVrijgesteld: true,   // standaard aan voor huisarts
   })
 
   const updateRegel = (i, field, val) => {
@@ -35,8 +36,8 @@ function FactuurModal({ factuur, onClose }) {
     setForm({ ...form, regels })
   }
 
-  const totaalEx = form.regels.reduce((s, r) => s + (parseFloat(r.bedrag) || 0), 0)
-  const btwBedrag = totaalEx * (form.btwTarief / 100)
+  const totaalEx  = form.regels.reduce((s, r) => s + (parseFloat(r.bedrag) || 0), 0)
+  const btwBedrag = form.btwVrijgesteld ? 0 : totaalEx * (form.btwTarief / 100)
   const totaalInc = totaalEx + btwBedrag
 
   const handleSubmit = () => {
@@ -133,22 +134,46 @@ function FactuurModal({ factuur, onClose }) {
           </table>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <div style={{ background: 'var(--bg3)', borderRadius: 'var(--radius)', padding: '1rem 1.25rem', minWidth: 220 }}>
+        {/* BTW-vrijstelling schakelaar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: form.btwVrijgesteld ? 'var(--accent-dim)' : 'var(--bg3)', border: `1px solid ${form.btwVrijgesteld ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 'var(--radius)', padding: '0.75rem 1rem', marginTop: '0.5rem' }}>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: '0.875rem', color: form.btwVrijgesteld ? 'var(--accent)' : 'var(--text)' }}>
+              BTW-vrijgesteld (art. 11 Wet OB)
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text3)', marginTop: '0.15rem' }}>
+              {form.btwVrijgesteld ? 'Medische dienst — geen BTW op factuur' : 'BTW-plichtige dienst — BTW wordt berekend'}
+            </div>
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '0.5rem' }}>
+            <input
+              type="checkbox"
+              checked={form.btwVrijgesteld}
+              onChange={e => setForm({ ...form, btwVrijgesteld: e.target.checked })}
+              style={{ width: 18, height: 18, accentColor: 'var(--accent)', cursor: 'pointer' }}
+            />
+          </label>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
+          <div style={{ background: 'var(--bg3)', borderRadius: 'var(--radius)', padding: '1rem 1.25rem', minWidth: 260 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.825rem', marginBottom: '0.4rem' }}>
               <span style={{ color: 'var(--text2)' }}>Subtotaal</span>
               <span className="mono">{fmt(totaalEx)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.825rem', marginBottom: '0.75rem', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ color: 'var(--text2)' }}>BTW</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <select className="form-select" style={{ width: 80, fontSize: '0.8rem', padding: '0.2rem 0.4rem' }} value={form.btwTarief} onChange={e => setForm({ ...form, btwTarief: Number(e.target.value) })}>
-                  <option value={0}>0%</option>
-                  <option value={9}>9%</option>
-                  <option value={21}>21%</option>
-                </select>
-                <span className="mono">{fmt(btwBedrag)}</span>
-              </div>
+              {form.btwVrijgesteld ? (
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--accent)' }}>Vrijgesteld — €0,00</span>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <select className="form-select" style={{ width: 80, fontSize: '0.8rem', padding: '0.2rem 0.4rem' }} value={form.btwTarief} onChange={e => setForm({ ...form, btwTarief: Number(e.target.value) })}>
+                    <option value={0}>0%</option>
+                    <option value={9}>9%</option>
+                    <option value={21}>21%</option>
+                  </select>
+                  <span className="mono">{fmt(btwBedrag)}</span>
+                </div>
+              )}
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, borderTop: '1px solid var(--border)', paddingTop: '0.5rem' }}>
               <span>Totaal</span>
